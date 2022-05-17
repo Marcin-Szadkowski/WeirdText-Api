@@ -2,10 +2,9 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from copy import copy
 from dataclasses import dataclass, field
-from email.policy import default
-import re
-from typing import Any, List, Optional, Union
-from encoder import Token, WeirdText
+from typing import Any, List
+from parser import WeirdTextParser, Token, EncodedToken
+from utils import shuffle_possible, substitute_tokens
 
 # dokladne rozwiazanie nie zawsze istnieje
 
@@ -26,16 +25,8 @@ a) dlugosci
 Mamy sety: 
 """
 
-@dataclass(kw_only=True)
-class EncodedToken(Token):
-    decoded: str = None
 
 class Partition(ABC):
-    """
-    Niech to bedzie klasa, ktora tworzy kolekcje.
-    ale nie moze byc mylona ze zbiorem slow
-    """
-
     @abstractmethod
     def __init__(self, tokens: List[Token]) -> None:
         super().__init__()
@@ -49,12 +40,12 @@ class Partition(ABC):
     def _make_partition(self) -> None:
         for token in self.tokens:
             dict_key = self._construct_key(token.value)
-            
+
             self.partitions[dict_key].append(token)
 
     def get_matching_tokens(self, key: Any) -> List[Token]:
         return self.partitions.get(key)
-    
+
     @abstractmethod
     def _construct_key(self, word: str) -> Any:
         """Construct hashable key."""
@@ -72,8 +63,6 @@ class InitialPartition(Partition):
 
     def __init__(self, tokens: List[Token]) -> None:
         super().__init__(tokens)
-        # self.partitions = defaultdict(list)
-        # self.partitions = {1: [1, 2], 2: [2, 3, 4]}
 
     def _construct_key(self, word: str) -> tuple:
         first, last = self._get_first_last_letter(word)
@@ -87,6 +76,7 @@ class InitialPartition(Partition):
     def is_deterministic(self, tokens: List[Token]) -> bool:
         return len(tokens) == 1
 
+
 class SetOfLettersPartition(Partition):
     """
     Partition based on set of letters.
@@ -97,7 +87,7 @@ class SetOfLettersPartition(Partition):
         super().__init__(tokens)
 
     def _construct_key(self, word: str) -> Any:
-        sub_word = word[1: -1]
+        sub_word = word[1:-1]
         return set(sub_word)
 
     def is_deterministic(self, tokens: List[Token]) -> bool:
@@ -112,11 +102,12 @@ class ASCIISumPartition(Partition):
         Deterministic after previous partitions (?).
 
     """
+
     def __init__(self, tokens: List[Token]) -> None:
         super().__init__(tokens)
 
     def _construct_key(self, word: str) -> int:
-        sub_word = word[1: -1]
+        sub_word = word[1:-1]
         return self._sum_ascii(sub_word)
 
     def _sum_ascii(self, word: str) -> int:
@@ -130,53 +121,24 @@ class Decoder:
     partition_classes = [InitialPartition, SetOfLettersPartition, ASCIISumPartition]
 
     @staticmethod
-    def decode(text: WeirdText) -> str:
-        encoded_text, words_list = Decoder._get_data(text)
-        encoded_tokens = Decoder._tokenize_text(encoded_text, EncodedToken)
-        encoded_tokens = list(filter(Decoder._shuffle_possible, encoded_tokens))
-        key_tokens = Decoder._tokenize_text(words_list, Token)
+    def decode(text: str) -> str:
+        result = []
+        weird_text = WeirdTextParser(text)
+        key_tokens, encoded_tokens = weird_text.key_tokens, weird_text.encoded_tokens
+        encoded_tokens = list(filter(shuffle_possible, encoded_tokens))
 
         partition_classes = copy(Decoder.partition_classes)
 
-        # key_partition = InitialPartition(words)
-        # encoded_partition = InitialPartition(encoded_words)
-        result = []
         Decoder._partition_sets(key_tokens, encoded_tokens, partition_classes, result)
-        return Decoder._sub_tokens(encoded_text, result)
-    
-    @staticmethod
-    def _tokenize_text(text: str, token_class: Token) -> List[Token]:
-        # TODO move it smwh else
-        tokenize_re = re.compile(r"(\w+)", re.U)
-        return [
-            token_class(start=m.start(0), end=m.end(0), value=m[0]) for m in tokenize_re.finditer(text)
-        ]
+        return substitute_tokens(text, result)
 
-    @staticmethod
-    def _shuffle_possible(token: Token) -> bool:
-        word = token.value
-        if len(word) <= 3:
-            return False
 
-        sub = word[1:-1]
-        letters = set()
-
-        for letter in sub:
-            letters.add(letter)
-            if len(letters) == 2:
-                return True
-
-        return False
-    
     @staticmethod
     def _partition_sets(
-        key_part: list,
-        encoded_part: list,
-        part_classes: list,
-        result: List[Token]
+        key_part: list, encoded_part: list, part_classes: list, result: List[Token]
     ):
         if len(part_classes) == 0:
-            return  # return accumulator
+            return
 
         _part_class = part_classes.pop(0)
         key_part = _part_class(key_part)
@@ -191,7 +153,7 @@ class Decoder:
                 )
             else:
                 Decoder._match_words_from(tokens, matching_encoded_set, result)
-        
+
     @staticmethod
     def _match_words_from(key_tokens: list, encoded_tokens: list, result: list) -> None:
         if len(key_tokens) > 1:
@@ -201,35 +163,15 @@ class Decoder:
             encoded_token.decoded = key_token.value
             result.append(encoded_token)
 
-    @staticmethod
-    def _sub_tokens(text: str, tokens: list) -> str:
-        new = text
-        for token in tokens:
-            if token.decoded is None:
-                continue
-            new = new[: token.start] + token.decoded + new[token.end :]
-        return new
-
-    @staticmethod
-    def _get_data(text: str) -> tuple:
-        code_elements = Decoder._filter_empty(Decoder._split_data(text))
-        if len(code_elements) != 2:
-            raise RuntimeError("Insufficient code elements.")
-        return code_elements[0], code_elements[1]
-
-    @staticmethod
-    def _split_data(text: str) -> list:
-        return text.split(WeirdText.separator)
-
-    def _filter_empty(code_elements: list) -> tuple:
-        return list(filter(lambda el: el, code_elements))
 
 if __name__ == "__main__":
-    text = "\n-weird-\n" \
-            "Tihs is a lnog loonog tset sntceene,\n" \
-            "wtih smoe big (biiiiig) wdros!" \
-            "\n-weird-\n" \
-            "long looong sentence some test This with words"
+    text = (
+        "\n-weird-\n"
+        "Tihs is a lnog loonog tset sntceene,\n"
+        "wtih smoe big (biiiiig) wdros!"
+        "\n-weird-\n"
+        "long looong sentence some test This with words"
+    )
     print(Decoder.decode(text))
     # partition = InitialPartition(["word", "wrod", "marcin", "marian"])
     # for key, part in partition:
