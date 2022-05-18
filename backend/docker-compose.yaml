@@ -1,0 +1,15 @@
+version: "3.7"
+
+services:
+  api:
+    container_name: api
+    build: .
+    # networks:
+    #   - db-network
+    #   - app-network
+    ports:
+      - "8080:8080"
+    env_file:
+      - ./.envs/local/backend.env
+    volumes:
+      - ./app:/code/app

@@ -3,27 +3,8 @@ from collections import defaultdict
 from copy import copy
 from dataclasses import dataclass, field
 from typing import Any, List
-from parser import WeirdTextParser, Token, EncodedToken
-from utils import shuffle_possible, substitute_tokens
-
-# dokladne rozwiazanie nie zawsze istnieje
-
-# wiemy jak wyglada kodowanie
-"""
-Dwa podjescia:
-1. 
-    1. dla kazdego kodowalnego slowa kodujemy je i sprawdzamy czy jest w slowniku - izi
-    zlozonosc? duzo
-
-2. 
-    1. filtrujemy kodowalne slowa 
-    2. dla kazdego slowa ze slownika 
-
-optymalnie mozna najpierw przypasowac po:
-a) dlugosci 
-
-Mamy sety: 
-"""
+from app.weird_text.parser import DecodingException, ParserException, WeirdTextParser, Token
+from app.weird_text.utils import shuffle_possible, substitute_tokens
 
 
 class Partition(ABC):
@@ -123,15 +104,19 @@ class Decoder:
     @staticmethod
     def decode(text: str) -> str:
         result = []
-        weird_text = WeirdTextParser(text)
+        try:
+            weird_text = WeirdTextParser(text)
+        except ParserException as e:
+            raise DecodingException(e)
+            
         key_tokens, encoded_tokens = weird_text.key_tokens, weird_text.encoded_tokens
         encoded_tokens = list(filter(shuffle_possible, encoded_tokens))
 
         partition_classes = copy(Decoder.partition_classes)
 
         Decoder._partition_sets(key_tokens, encoded_tokens, partition_classes, result)
-        return substitute_tokens(text, result)
-
+        print(result)
+        return substitute_tokens(weird_text.encoded_text, result)
 
     @staticmethod
     def _partition_sets(
@@ -160,19 +145,5 @@ class Decoder:
             print("Warning: matching is not deterministic.")
 
         for key_token, encoded_token in zip(key_tokens, encoded_tokens):
-            encoded_token.decoded = key_token.value
+            encoded_token.coded = key_token.value
             result.append(encoded_token)
-
-
-if __name__ == "__main__":
-    text = (
-        "\n-weird-\n"
-        "Tihs is a lnog loonog tset sntceene,\n"
-        "wtih smoe big (biiiiig) wdros!"
-        "\n-weird-\n"
-        "long looong sentence some test This with words"
-    )
-    print(Decoder.decode(text))
-    # partition = InitialPartition(["word", "wrod", "marcin", "marian"])
-    # for key, part in partition:
-    #     print(key, part)

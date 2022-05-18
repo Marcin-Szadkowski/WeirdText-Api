@@ -1,14 +1,14 @@
 from typing import List
 
-from parser import Token
+from app.weird_text.parser import Token
 
 
 def substitute_tokens(text: str, tokens: List[Token]) -> str:
     new = text
     for token in tokens:
-        if token.encoded is None:
+        if token.coded is None:
             continue
-        new = new[: token.start] + token.encoded + new[token.end :]
+        new = new[: token.start] + token.coded + new[token.end :]
     return new
 
 

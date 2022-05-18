@@ -1,10 +1,10 @@
 import copy
 from dataclasses import dataclass, field
 import random
-from typing import List, Optional, Tuple
+from typing import Tuple
 
-from parser import PlainTextParser, Token
-from utils import shuffle_possible, substitute_tokens
+from app.weird_text.parser import PlainTextParser, Token
+from app.weird_text.utils import shuffle_possible, substitute_tokens
 
 
 class WeirdText:
@@ -37,11 +37,10 @@ class Encoder:
         shuffled_tokens, sorted_words = Encoder._encode(tokens)
         weird_text = substitute_tokens(text, shuffled_tokens)
 
-        return WeirdText(weird_text, sorted_words)
+        return str(WeirdText(weird_text, sorted_words))
 
     @staticmethod
-    def _encode(tokens: str) -> Tuple[list, list]:
-        tokens = PlainTextParser(text).tokens
+    def _encode(tokens: list) -> Tuple[list, list]:
         shuffled_tokens = []
         words = []
 
@@ -63,10 +62,5 @@ class Encoder:
         while original_sub == sub:
             sub = "".join(random.sample(original_sub, len(original_sub)))
 
-        token.encoded = word[0] + sub + word[-1]
+        token.coded = word[0] + sub + word[-1]
         return token.value
-
-
-if __name__ == "__main__":
-    text = "This is a long looong test sentence,\nwith some big (biiiiig) words!"
-    print(Encoder.encode(text))
