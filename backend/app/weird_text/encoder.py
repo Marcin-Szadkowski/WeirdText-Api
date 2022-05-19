@@ -1,3 +1,7 @@
+"""
+Module to encode weird text.
+
+"""
 import copy
 from dataclasses import dataclass, field
 import random
@@ -20,19 +24,9 @@ class WeirdText:
         return self.text
 
 
-# TODO probably all static methods
 class Encoder:
-    """
-    foreach word in words:
-        shuffle(w[..o.r..]d) # if possible shuffle(word) != word
-        if is_shuffled(word):
-            shuffled_words += word
-
-    sorted(shuffled_words)
-    """
-
     @staticmethod
-    def encode(text: str) -> WeirdText:
+    def encode(text: str) -> str:
         tokens = PlainTextParser(text).tokens
         shuffled_tokens, sorted_words = Encoder._encode(tokens)
         weird_text = substitute_tokens(text, shuffled_tokens)

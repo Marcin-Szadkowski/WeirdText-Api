@@ -1,3 +1,7 @@
+"""
+Module to decode weird text.
+
+"""
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from copy import copy
@@ -20,6 +24,7 @@ class Partition(ABC):
         return iter(self.partitions.items())
 
     def _make_partition(self) -> None:
+        """Partition words based on constructed key."""
         for token in self.tokens:
             dict_key = self._construct_key(token.value)
 
@@ -30,7 +35,7 @@ class Partition(ABC):
 
     @abstractmethod
     def _construct_key(self, word: str) -> Any:
-        """Construct hashable key."""
+        """Construct hashable key. Implement some criteria for partitioning words."""
 
     @abstractmethod
     def is_deterministic(self, tokens: List[Token]) -> bool:
@@ -80,9 +85,6 @@ class ASCIISumPartition(Partition):
     """
     Partition based on sum of ASCII codes.
 
-    Note::
-        Deterministic after previous partitions (?).
-
     """
 
     def __init__(self, tokens: List[Token]) -> None:
@@ -96,6 +98,7 @@ class ASCIISumPartition(Partition):
         return sum(ord(letter) for letter in word)
 
     def is_deterministic(self, tokens: List[Token]) -> bool:
+        """Last partition criteria should be deterministic."""
         return True
 
 

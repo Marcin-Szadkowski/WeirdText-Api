@@ -4,6 +4,7 @@ from app.weird_text.parser import Token
 
 
 def substitute_tokens(text: str, tokens: List[Token]) -> str:
+    """Substitute tokens in given text."""
     new = text
     for token in tokens:
         if token.coded is None:
@@ -13,6 +14,7 @@ def substitute_tokens(text: str, tokens: List[Token]) -> str:
 
 
 def shuffle_possible(token: Token) -> bool:
+    """Check if shuffle is possible."""
     word = token.value
     if len(word) <= 3:
         return False
