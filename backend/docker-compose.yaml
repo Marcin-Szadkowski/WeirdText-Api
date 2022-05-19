@@ -4,12 +4,9 @@ services:
   api:
     container_name: api
     build: .
-    # networks:
-    #   - db-network
-    #   - app-network
     ports:
-      - "8080:8080"
+      - "8080:${PORT}"
     env_file:
-      - ./.envs/local/backend.env
+      - .env
     volumes:
       - ./app:/code/app
