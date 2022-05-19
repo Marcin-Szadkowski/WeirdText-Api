@@ -35,3 +35,14 @@ This is project to handle encoding of weird text and decoding. It exposes two en
   ```
   docker-compose exec api pytest
   ```
+  
+  Deploy
+  ------
+  Manual deploy script is located in tools/release.sh
+ 
+  To deploy automatically using configured *heroku.yml*
+  ```
+  git push heroku master
+  ```
+  
+  
