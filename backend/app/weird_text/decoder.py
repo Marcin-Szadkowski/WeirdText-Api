@@ -1,9 +1,10 @@
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from copy import copy
-from dataclasses import dataclass, field
 from typing import Any, List
-from app.weird_text.parser import DecodingException, ParserException, WeirdTextParser, Token
+
+from app.weird_text.parser import (DecodingException, ParserException, Token,
+                                   WeirdTextParser)
 from app.weird_text.utils import shuffle_possible, substitute_tokens
 
 
@@ -108,7 +109,7 @@ class Decoder:
             weird_text = WeirdTextParser(text)
         except ParserException as e:
             raise DecodingException(e)
-            
+
         key_tokens, encoded_tokens = weird_text.key_tokens, weird_text.encoded_tokens
         encoded_tokens = list(filter(shuffle_possible, encoded_tokens))
 

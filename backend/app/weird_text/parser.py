@@ -1,6 +1,6 @@
+import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-import re
 from typing import List
 
 
@@ -69,11 +69,13 @@ class WeirdTextParser(_Parser):
 
     def _parse(self) -> tuple:
         if not self._is_valid_code_structure():
-            raise ParserException(f"Inalid code structure. Should start with {repr(self.separator)}")
-            
+            raise ParserException(
+                f"Inalid code structure. Should start with {repr(self.separator)}"
+            )
+
         code_elements = self._filter_empty(self._split_data())
         if len(code_elements) != 2:
-            raise RuntimeError("Insufficient code elements.")
+            raise ParserException("Insufficient code elements.")
         return code_elements[0], code_elements[1]
 
     def _is_valid_code_structure(self) -> bool:
